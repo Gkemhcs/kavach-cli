@@ -1,0 +1,38 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+
+# Types:
+#   feat     (new feature for the user, not a new feature for build script)
+#   fix      (bug fix for the user, not a fix to a build script)
+#   docs     (changes to the documentation)
+#   style    (formatting, missing semi colons, etc; no production code change)
+#   refactor (refactoring production code, eg. renaming a variable)
+#   test     (adding missing tests, refactoring tests; no production code change)
+#   chore    (updating grunt tasks etc; no production code change)
+#   perf     (performance improvements)
+#   ci       (CI/CD related changes)
+#   build    (build system or external dependencies)
+#   revert   (revert a previous commit)
+
+# Scopes:
+#   cli      (CLI related changes)
+#   auth     (authentication related changes)
+#   secrets  (secret management changes)
+#   providers (cloud provider integrations)
+#   api      (API related changes)
+#   docs     (documentation changes)
+#   deps     (dependency updates)
+
+# Examples:
+#   feat(cli): add new secret sync command
+#   fix(auth): resolve token expiration issue
+#   docs(api): update API documentation
+#   chore(deps): update Go dependencies
+#   ci(build): add automated versioning workflow
+
+# Breaking Changes:
+#   Use ! after type/scope to indicate breaking change
+#   Example: feat(cli)!: change default config path 

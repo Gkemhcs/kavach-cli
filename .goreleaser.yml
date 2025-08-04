@@ -1,0 +1,92 @@
+# GoReleaser configuration for Kavach CLI
+# This file configures how GoReleaser builds and releases the CLI
+
+# Project name and basic info
+project_name: kavach-cli
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    #- go generate ./...
+
+# Build configuration
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+    binary: kavach
+    main: ./main.go
+    ldflags:
+      - -s -w
+      - -X github.com/Gkemhcs/kavach-cli/internal/version.Version={{.Version}}
+      - -X github.com/Gkemhcs/kavach-cli/internal/version.BuildTime={{.Date}}
+      - -X github.com/Gkemhcs/kavach-cli/internal/version.GitCommit={{.Commit}}
+      - -X github.com/Gkemhcs/kavach-cli/internal/version.GitBranch={{.Branch}}
+
+# Archive configuration
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+
+# Checksums configuration
+checksum:
+  name_template: 'checksums.txt'
+
+# Snapshot configuration
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+# Changelog configuration
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+
+# Release configuration
+release:
+  # GitHub release configuration
+  github:
+    owner: Gkemhcs
+    name: kavach-cli
+  # Set to true if you want to auto-draft new releases
+  draft: false
+  # Automatically mark as pre-release based on tag (alpha, beta, rc)
+  prerelease: auto
+
+# Sign configuration using Cosign with OIDC keyless signing
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - '--oidc-provider=github-actions'
+      - '--output-certificate=${certificate}'
+      - '--output-signature=${signature}'
+      - '${artifact}'
+      - --yes
+    artifacts: all
+    output: true 
