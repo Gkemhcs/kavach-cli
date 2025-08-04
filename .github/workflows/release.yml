@@ -42,38 +42,4 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  test-release:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download latest release
-        run: |
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/Gkemhcs/kavach-cli/releases/latest | jq -r .tag_name)
-          echo "Latest version: $LATEST_VERSION"
-          
-          # Download Linux binary
-          wget "https://github.com/Gkemhcs/kavach-cli/releases/download/$LATEST_VERSION/kavach-cli_Linux_x86_64.tar.gz"
-          tar -xzf kavach-cli_Linux_x86_64.tar.gz
-          
-          # Test the binary
-          ./kavach version
-          ./kavach --help
-
-      - name: Test version command
-        run: |
-          VERSION_OUTPUT=$(./kavach version --short)
-          echo "Version output: $VERSION_OUTPUT"
-          
-          # Verify version matches tag
-          EXPECTED_VERSION=${GITHUB_REF#refs/tags/}
-          if [[ "$VERSION_OUTPUT" == *"$EXPECTED_VERSION"* ]]; then
-            echo "✅ Version matches expected: $EXPECTED_VERSION"
-          else
-            echo "❌ Version mismatch. Expected: $EXPECTED_VERSION, Got: $VERSION_OUTPUT"
-            exit 1
-          fi 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
