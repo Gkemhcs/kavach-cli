@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewUserGroupCommand creates a new command for managing user groups
 func NewUserGroupCommand(logger *utils.Logger, cfg *config.Config, userGroupClient groups.UserGroupClient, userGroupMemberClient groups.UserGroupMemberClient) *cobra.Command {
 	userGroupCmd := &cobra.Command{
 		Use:   "user-group",

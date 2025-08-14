@@ -74,6 +74,19 @@ future commands.`,
 					logger.Warn("Access denied during org create", map[string]interface{}{"cmd": "org create", "org": name})
 					return nil
 				}
+				if err == cliErrors.ErrInvalidToken {
+					fmt.Printf("\n🔒 You are not logged in. Please run 'kavach login' to log in.\n")
+					logger.Warn("User not logged in during org create", map[string]interface{}{"cmd": "org create", "org": name})
+					return nil
+				}
+
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during org create", map[string]interface{}{"cmd": "org create", "org": name})
+					return nil
+				}
+
 				logger.Error("Failed to create organization", err, map[string]interface{}{"cmd": "org create", "org": name})
 				return err
 			}

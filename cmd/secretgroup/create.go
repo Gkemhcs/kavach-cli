@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewCreateSecretGroupCommand creates a new command for creating secret groups
 func NewCreateSecretGroupCommand(logger *utils.Logger, groupClient secretgroup.SecretGroupClient) *cobra.Command {
 
 	var description string
@@ -98,6 +99,11 @@ future commands.`,
 				}
 				if err == cliErrors.ErrAccessDenied {
 					fmt.Printf("\n%s\n", err.Error())
+					return nil
+				}
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
 					return nil
 				}
 				return err

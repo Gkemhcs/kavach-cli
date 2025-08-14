@@ -98,6 +98,12 @@ is used only when no environment is explicitly provided.`,
 					logger.Warn("Access denied during environment activate", map[string]interface{}{"cmd": "env activate", "env": envName, "group": groupName, "org": orgName})
 					return nil
 				}
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during environment activate", map[string]interface{}{"cmd": "env activate", "env": envName, "org": orgName, "group": groupName})
+					return nil
+				}
 				return err
 			}
 			cfg.Organization = orgName

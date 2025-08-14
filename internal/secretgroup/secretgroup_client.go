@@ -148,6 +148,10 @@ func (c *SecretGroupHttpClient) DeleteSecretGroupByName(orgName, groupName strin
 		},
 	}
 	respBody, err := client.DoAuthenticatedRequest[any](payload, c.logger, c.cfg)
+	if err != nil {
+		c.logger.Error("Failed to delete secret group", err, map[string]interface{}{"cmd": "group delete", "group": groupName, "org": orgName})
+		return err
+	}
 	if !respBody.Success {
 		if respBody.ErrorCode == "foreign_key_constraint_violation" {
 			return cliErrors.ErrForeignKeyViolation
@@ -330,4 +334,70 @@ func (c *SecretGroupHttpClient) RevokeRoleBinding(req types.RevokeRoleBindingInp
 		"org":         req.OrgName,
 	})
 	return nil
+}
+
+// ListRoleBindings lists all role bindings for a secret group with resolved names.
+func (c *SecretGroupHttpClient) ListRoleBindings(orgName, groupName string) ([]RoleBinding, error) {
+	// Validate authentication
+	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
+		return nil, err
+	}
+
+	// Get organization and secret group details
+	org, err := c.orgGetter.GetOrganizationByName(orgName)
+	if err != nil {
+		c.logger.Error("Failed to get organization during role bindings listing", err, map[string]interface{}{
+			"cmd": "group list-bindings",
+			"org": orgName,
+		})
+		return nil, err
+	}
+
+	secretGroup, err := c.GetSecretGroupByName(orgName, groupName)
+	if err != nil {
+		c.logger.Error("Failed to get secret group during role bindings listing", err, map[string]interface{}{
+			"cmd":   "group list-bindings",
+			"org":   orgName,
+			"group": groupName,
+		})
+		return nil, err
+	}
+
+	// Prepare and execute request
+	payload := client.RequestPayload{
+		Method: "GET",
+		URL:    fmt.Sprintf("%sorganizations/%s/secret-groups/%s/role-bindings", c.cfg.BackendEndpoint, org.ID.String(), secretGroup.ID),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	respBody, err := client.DoAuthenticatedRequest[ListRoleBindingsResponse](payload, c.logger, c.cfg)
+	if err != nil {
+		c.logger.Error("Failed to list secret group role bindings", err, map[string]interface{}{
+			"cmd":   "group list-bindings",
+			"org":   orgName,
+			"group": groupName,
+		})
+		return nil, err
+	}
+
+	// Handle response
+	if !respBody.Success {
+		c.logger.Error("Failed to list secret group role bindings", fmt.Errorf(respBody.ErrorMsg), map[string]interface{}{
+			"cmd":   "group list-bindings",
+			"org":   orgName,
+			"group": groupName,
+		})
+		return nil, cliErrors.HandleRoleBindingListError(respBody.ErrorCode, respBody.ErrorMsg)
+	}
+
+	c.logger.Info("Secret group role bindings listed successfully", map[string]interface{}{
+		"cmd":   "group list-bindings",
+		"org":   orgName,
+		"group": groupName,
+		"count": len(respBody.Data.Bindings),
+	})
+
+	return respBody.Data.Bindings, nil
 }

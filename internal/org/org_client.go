@@ -58,6 +58,13 @@ func (c *OrgHttpClient) CreateOrganization(name, description string) error {
 			c.logger.Warn("Duplicate organization during create", map[string]interface{}{"cmd": "org create", "org": name})
 			return cliErrors.ErrDuplicateOrganisation
 		}
+
+		// Check if the error message indicates an authentication failure
+		if cliErrors.IsAuthenticationError(fmt.Errorf(respBody.ErrorMsg)) {
+			c.logger.Warn("Authentication error during org create", map[string]interface{}{"cmd": "org create", "org": name})
+			return cliErrors.ErrInvalidToken
+		}
+
 		c.logger.Error("Failed to create organization", fmt.Errorf(respBody.ErrorMsg), map[string]interface{}{"cmd": "org create", "org": name})
 		return fmt.Errorf(respBody.ErrorMsg)
 	}
@@ -307,4 +314,57 @@ func (c *OrgHttpClient) RevokeRoleBinding(req types.RevokeRoleBindingInput) erro
 		"org": req.OrgName,
 	})
 	return nil
+}
+
+// ListRoleBindings lists all role bindings for an organization with resolved names.
+func (c *OrgHttpClient) ListRoleBindings(orgName string) ([]RoleBinding, error) {
+	// Validate authentication
+	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
+		return nil, err
+	}
+
+	// Get organization details
+	org, err := c.GetOrganizationByName(orgName)
+	if err != nil {
+		c.logger.Error("Failed to get organization during role bindings listing", err, map[string]interface{}{
+			"cmd": "org list-bindings",
+			"org": orgName,
+		})
+		return nil, err
+	}
+
+	// Prepare and execute request
+	payload := client.RequestPayload{
+		Method: "GET",
+		URL:    fmt.Sprintf("%sorganizations/%s/role-bindings", c.cfg.BackendEndpoint, org.ID.String()),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	respBody, err := client.DoAuthenticatedRequest[ListRoleBindingsResponse](payload, c.logger, c.cfg)
+	if err != nil {
+		c.logger.Error("Failed to list organization role bindings", err, map[string]interface{}{
+			"cmd": "org list-bindings",
+			"org": orgName,
+		})
+		return nil, err
+	}
+
+	// Handle response
+	if !respBody.Success {
+		c.logger.Error("Failed to list organization role bindings", fmt.Errorf(respBody.ErrorMsg), map[string]interface{}{
+			"cmd": "org list-bindings",
+			"org": orgName,
+		})
+		return nil, cliErrors.HandleRoleBindingListError(respBody.ErrorCode, respBody.ErrorMsg)
+	}
+
+	c.logger.Info("Organization role bindings listed successfully", map[string]interface{}{
+		"cmd":   "org list-bindings",
+		"org":   orgName,
+		"count": len(respBody.Data.Bindings),
+	})
+
+	return respBody.Data.Bindings, nil
 }

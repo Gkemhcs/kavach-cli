@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewActivateSecretGroupCommand creates a new command for activating secret groups
 func NewActivateSecretGroupCommand(logger *utils.Logger, groupClient secretgroup.SecretGroupClient) *cobra.Command {
 	var orgName string
 	cmd := &cobra.Command{
@@ -78,6 +79,11 @@ is used only when no secret group is explicitly provided.`,
 				}
 				if err == cliErrors.ErrAccessDenied {
 					fmt.Printf("\n%s\n", err.Error())
+					return nil
+				}
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
 					return nil
 				}
 				return err

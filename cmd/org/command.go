@@ -52,6 +52,7 @@ Examples:
 		NewActivateOrgCommand(logger, orgClient), // Add switch command
 		NewGrantOrgCommand(logger, orgClient),
 		NewRevokeOrgCommand(logger, orgClient),
+		NewListBindingsCommand(logger, orgClient),
 	)
 	return orgCmd
 }

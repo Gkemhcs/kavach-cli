@@ -36,10 +36,10 @@ func NewLogger(cfg *config.Config) *Logger {
 	logPath := filepath.Join(fullLogDir, "kavach.log")
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   logPath,
-		MaxSize:    1,  // megabytes
-		MaxBackups: 3,  // number of old files to keep
-		MaxAge:     28, // days
-		Compress:   false,
+		MaxSize:    cfg.LogMaxSize,    // megabytes
+		MaxBackups: cfg.LogMaxBackups, // number of old files to keep
+		MaxAge:     cfg.LogMaxAge,     // days
+		Compress:   cfg.LogCompress,   // whether to compress old files
 	}
 	z := zerolog.New(lumberjackLogger).With().Timestamp().Logger()
 	return &Logger{zlog: z, logFile: nil}

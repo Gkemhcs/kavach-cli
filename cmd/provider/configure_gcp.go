@@ -115,7 +115,7 @@ secrets to Google Cloud Secret Manager.`,
 
 			// Set defaults
 			if gcpSecretManagerLocation == "" {
-				gcpSecretManagerLocation = "us-central1"
+				gcpSecretManagerLocation = ""
 			}
 			if gcpReplication == "" {
 				gcpReplication = "automatic"

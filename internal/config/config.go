@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
 // Config holds all configuration values for the CLI, loaded from environment variables or config files.
@@ -14,17 +15,31 @@ type Config struct {
 	TokenFilePath   string // Path to credentials file
 	BackendEndpoint string // URL of backend
 	LogDirPath      string // Log directory path
+
+	// Logging configuration
+	LogMaxSize    int  // Maximum size of log file in MB
+	LogMaxBackups int  // Maximum number of old log files to keep
+	LogMaxAge     int  // Maximum age of log files in days
+	LogCompress   bool // Whether to compress old log files
 }
 
 // Load reads configuration from environment variables and returns a Config struct.
 // Sets sensible defaults for local development and production.
 func Load() *Config {
+	// Set defaults for all configuration values
 	viper.SetDefault("KAVACH_DEVICE_CODE_URL", "http://localhost:8080/api/v1/auth/device/code")
 	viper.SetDefault("KAVACH_DEVICE_TOKEN_URL", "http://localhost:8080/api/v1/auth/device/token")
 	viper.SetDefault("KAVACH_TOKEN_FILE_PATH", "/.kavach/credentials.json")
 	viper.SetDefault("KAVACH_LOG_DIR_PATH", "/.kavach/")
 	viper.SetDefault("KAVACH_BACKEND_ENDPOINT", "http://localhost:8080/api/v1/")
 
+	// Logging configuration defaults
+	viper.SetDefault("KAVACH_LOG_MAX_SIZE", 1)     // 1 MB
+	viper.SetDefault("KAVACH_LOG_MAX_BACKUPS", 3)  // 3 backup files
+	viper.SetDefault("KAVACH_LOG_MAX_AGE", 28)     // 28 days
+	viper.SetDefault("KAVACH_LOG_COMPRESS", false) // Don't compress by default
+
+	//Commented out production defaults for reference
 	// viper.SetDefault("KAVACH_DEVICE_CODE_URL", "https://kavach.gkem.cloud/api/v1/auth/device/code")
 	// viper.SetDefault("KAVACH_DEVICE_TOKEN_URL", "https://kavach.gkem.cloud/api/v1/auth/device/token")
 	// viper.SetDefault("KAVACH_TOKEN_FILE_PATH", "/.kavach/credentials.json")
@@ -37,6 +52,12 @@ func Load() *Config {
 		TokenFilePath:   viper.GetString("KAVACH_TOKEN_FILE_PATH"),
 		LogDirPath:      viper.GetString("KAVACH_LOG_DIR_PATH"),
 		BackendEndpoint: viper.GetString("KAVACH_BACKEND_ENDPOINT"),
+
+		// Logging configuration
+		LogMaxSize:    viper.GetInt("KAVACH_LOG_MAX_SIZE"),
+		LogMaxBackups: viper.GetInt("KAVACH_LOG_MAX_BACKUPS"),
+		LogMaxAge:     viper.GetInt("KAVACH_LOG_MAX_AGE"),
+		LogCompress:   viper.GetBool("KAVACH_LOG_COMPRESS"),
 	}
 }
 
@@ -47,8 +68,8 @@ type CLIConfig struct {
 	Environment  string `yaml:"environment,omitempty"`
 }
 
-// ConfigFilePath returns the path to the config.yaml file in the user's home directory.
-func ConfigFilePath() (string, error) {
+// FilePath returns the path to the config.yaml file in the user's home directory.
+func FilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -59,7 +80,7 @@ func ConfigFilePath() (string, error) {
 // LoadCLIConfig loads CLI config from ~/.kavach/config.yaml.
 // Returns an empty config if the file does not exist or is empty.
 func LoadCLIConfig() (*CLIConfig, error) {
-	path, err := ConfigFilePath()
+	path, err := FilePath()
 	if err != nil {
 		return &CLIConfig{}, nil // just return empty config
 	}
@@ -86,7 +107,7 @@ func LoadCLIConfig() (*CLIConfig, error) {
 
 // SaveCLIConfig saves CLI config to ~/.kavach/config.yaml.
 func SaveCLIConfig(cfg *CLIConfig) error {
-	path, err := ConfigFilePath()
+	path, err := FilePath()
 	if err != nil {
 		return err
 	}

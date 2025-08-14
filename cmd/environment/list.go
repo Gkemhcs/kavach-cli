@@ -17,6 +17,7 @@ func GetListEnvironmentHeaders() []string {
 		"Environment Name",
 		"SecretGroup Name",
 		"Role",
+		"Inherited From",
 		"Active",
 	}
 }
@@ -90,6 +91,12 @@ Use 'kavach env activate <name>' to change the active environment.`,
 					logger.Warn("Access denied during environment list", map[string]interface{}{"cmd": "env list"})
 					return nil
 				}
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during environment list", map[string]interface{}{"cmd": "env list"})
+					return nil
+				}
 				logger.Error("Failed to list environments", err, map[string]interface{}{"cmd": "env list"})
 				return err
 			}
@@ -112,7 +119,7 @@ func ToRenderable(data []environment.ListEnvironmentsWithMemberRow) [][]string {
 		if config.Environment == env.Name {
 			active = "🟢"
 		}
-		out = append(out, []string{env.EnvironmentID, env.Name, env.SecretGroupName, env.Role, active})
+		out = append(out, []string{env.EnvironmentID, env.Name, env.SecretGroupName, env.Role, env.InheritedFrom, active})
 	}
 	return out
 }

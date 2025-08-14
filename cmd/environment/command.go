@@ -61,6 +61,7 @@ Examples:
 		NewDeleteEnvironmentCommand(logger, envClient),
 		NewGrantEnvironmentCommand(logger, envClient),
 		NewRevokeEnvironmentCommand(logger, envClient),
+		NewListBindingsCommand(logger, envClient),
 	)
 	return environmentCmd
 }

@@ -11,16 +11,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// GetListSecretGroupHeaders returns the headers for the secret group list table
 func GetListSecretGroupHeaders() []string {
 	return []string{
 		"Secret Group Id",
 		"Secret Group  Name",
 		"Organization Name",
 		"Role",
+		"Inherited From",
 		"Active",
 	}
 }
 
+// NewListSecretGroupCommand creates a new command for listing secret groups
 func NewListSecretGroupCommand(logger *utils.Logger, groupclient secretgroup.SecretGroupClient) *cobra.Command {
 	var orgName string
 	cmd := &cobra.Command{
@@ -80,6 +83,11 @@ Use 'kavach group activate <name>' to change the active secret group.`,
 					fmt.Printf("\n%s\n", err.Error())
 					return nil
 				}
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					return nil
+				}
 				return err
 			}
 
@@ -91,15 +99,16 @@ Use 'kavach group activate <name>' to change the active secret group.`,
 	return cmd
 }
 
+// ToRenderable converts secret group data to a format suitable for table rendering
 func ToRenderable(data []secretgroup.ListSecretGroupsWithMemberRow) [][]string {
 	var out [][]string
 	config, _ := config.LoadCLIConfig()
 
 	for _, group := range data {
 		if config.SecretGroup == group.Name {
-			out = append(out, []string{group.SecretGroupID.String(), group.Name, group.OrganizationName, group.Role, "🟢"})
+			out = append(out, []string{group.SecretGroupID.String(), group.Name, group.OrganizationName, group.Role, group.InheritedFrom, "🟢"})
 		} else {
-			out = append(out, []string{group.SecretGroupID.String(), group.Name, group.OrganizationName, group.Role, ""})
+			out = append(out, []string{group.SecretGroupID.String(), group.Name, group.OrganizationName, group.Role, group.InheritedFrom, ""})
 		}
 
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewDeleteUserGroupCommand creates a new command for deleting user groups
 func NewDeleteUserGroupCommand(logger *utils.Logger, userGroupClient groups.UserGroupClient) *cobra.Command {
 	var orgName string
 	cmd := &cobra.Command{

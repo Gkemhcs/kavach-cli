@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewDeleteEnvironmentCommand creates a new command for deleting environments
 func NewDeleteEnvironmentCommand(logger *utils.Logger, envClient environment.EnvironmentClient) *cobra.Command {
 	var orgName string
 	var groupName string
@@ -92,8 +93,15 @@ those first before you can delete the environment.`,
 					return nil
 				case cliErrors.ErrAccessDenied:
 					fmt.Printf("\n%s\n", err.Error())
+					logger.Warn("Access denied during environment delete", map[string]interface{}{"cmd": "env delete", "env": name, "group": groupName, "org": orgName})
 					return nil
 				default:
+					// Check if the error message contains authentication-related text
+					if cliErrors.IsAuthenticationError(err) {
+						fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+						logger.Warn("Authentication error during environment delete", map[string]interface{}{"cmd": "env delete", "env": name, "org": orgName, "group": groupName})
+						return nil
+					}
 					return err
 				}
 

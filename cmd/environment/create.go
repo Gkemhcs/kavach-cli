@@ -126,6 +126,12 @@ future commands.`,
 					logger.Warn("Access denied during environment create", map[string]interface{}{"cmd": "env create", "env": name, "group": groupName, "org": orgName})
 					return nil
 				}
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during environment create", map[string]interface{}{"cmd": "env create", "env": name, "org": orgName, "group": groupName})
+					return nil
+				}
 				logger.Error("Failed to create environment", err, map[string]interface{}{"cmd": "env create", "env": name, "group": groupName, "org": orgName})
 				return err
 			}

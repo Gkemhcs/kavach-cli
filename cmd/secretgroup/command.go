@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewSecretGroupCommand creates a new command for managing secret groups
 func NewSecretGroupCommand(logger *utils.Logger, cfg *config.Config, groupClient secretgroup.SecretGroupClient) *cobra.Command {
 	groupCmd := &cobra.Command{
 		Use:   "group",
@@ -51,6 +52,7 @@ Examples:
 		NewDeleteSecretGroupCommand(logger, groupClient),
 		NewGrantSecretGroupCommand(logger, groupClient),
 		NewRevokeSecretGroupCommand(logger, groupClient),
+		NewListBindingsCommand(logger, groupClient),
 	)
 	return groupCmd
 }

@@ -177,7 +177,16 @@ update their existing permissions. Use 'kavach env revoke' to remove permissions
 					})
 					return nil
 				}
-
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during environment grant", map[string]interface{}{
+						"cmd":         "env grant",
+						"environment": environmentName,
+						"org":         orgName,
+					})
+					return nil
+				}
 				logger.Error("Failed to grant environment permissions", err, map[string]interface{}{
 					"cmd":         "env grant",
 					"environment": environmentName,

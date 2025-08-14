@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-format-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          go install golang.org/x/tools/cmd/goimports@latest
+
+      - name: Tidy Go modules
+        run: go mod tidy
+
+      - name: Verify Go modules
+        run: go mod verify
+
+      - name: Check code formatting
+        run: |
+          # Check if code is properly formatted
+          if [ "$(goimports -l . | wc -l)" -gt 0 ]; then
+            echo "❌ Code is not properly formatted. Run 'make format' to fix."
+            goimports -l .
+            exit 1
+          fi
+          echo "✅ Code formatting is correct"
+
+      - name: Run linter
+        run: |
+          golangci-lint run --timeout=5m
+
+      - name: Run tests
+        run: |
+          go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Build binary
+        run: |
+          go build -o kavach ./main.go
+          echo "✅ Binary built successfully"
+
+      - name: Test binary
+        run: |
+          ./kavach version --short
+          ./kavach --help
+          echo "✅ Binary test passed"

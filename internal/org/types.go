@@ -12,6 +12,7 @@ type OrgClient interface {
 	GetOrganizationByName(name string) (*Organization, error)
 	RevokeRoleBinding(req types.RevokeRoleBindingInput) error
 	GrantRoleBinding(req types.GrantRoleBindingInput) error
+	ListRoleBindings(orgName string) ([]RoleBinding, error)
 }
 
 type OrgGetterClient interface {
@@ -76,4 +77,24 @@ type RevokeRoleBindingRequest struct {
 	ResourceType   string `json:"resource_type"`
 	ResourceID     string `json:"resource_id"`
 	OrganizationID string `json:"organization_id"`
+}
+
+// RoleBinding represents a role binding with resolved names
+type RoleBinding struct {
+	OrganizationID string  `json:"organization_id"`
+	Role           string  `json:"role"`
+	BindingType    string  `json:"binding_type"` // "direct" or "inherited"
+	EntityType     string  `json:"entity_type"`  // "user" or "group"
+	EntityID       *string `json:"entity_id"`    // User ID (if entity_type is "user")
+	EntityName     *string `json:"entity_name"`  // User name or group name
+	GroupID        *string `json:"group_id"`     // Group ID (if entity_type is "group")
+	GroupName      *string `json:"group_name"`   // Group name (if entity_type is "group")
+	SourceType     string  `json:"source_type"`  // "organization", "secret_group", or "environment"
+}
+
+// ListRoleBindingsResponse represents the response for listing role bindings
+type ListRoleBindingsResponse struct {
+	OrganizationID string        `json:"organization_id"`
+	Bindings       []RoleBinding `json:"bindings"`
+	Count          int           `json:"count"`
 }

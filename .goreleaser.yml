@@ -86,6 +86,7 @@ signs:
       - '--oidc-provider=github-actions'
       - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
+      - '--tlog-upload=false'
       - '${artifact}'
       - --yes
     artifacts: all

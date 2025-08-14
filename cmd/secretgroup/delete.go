@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewDeleteSecretGroupCommand creates a new command for deleting secret groups
 func NewDeleteSecretGroupCommand(logger *utils.Logger, groupClient secretgroup.SecretGroupClient) *cobra.Command {
 	var orgName string
 	cmd := &cobra.Command{
@@ -89,6 +90,11 @@ those first before you can delete the secret group.`,
 					fmt.Printf("\n%s\n", err.Error())
 					return nil
 				default:
+					// Check if the error message contains authentication-related text
+					if cliErrors.IsAuthenticationError(err) {
+						fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+						return nil
+					}
 					return err
 				}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewCreateUserGroupCommand creates a new command for creating user groups
 func NewCreateUserGroupCommand(logger *utils.Logger, userGroupClient groups.UserGroupClient) *cobra.Command {
 
 	var description string

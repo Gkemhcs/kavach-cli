@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// GetUserGroupHeaders returns the headers for the user group list table
 func GetUserGroupHeaders() []string {
 	return []string{
 		"User Group Id",
@@ -20,6 +21,7 @@ func GetUserGroupHeaders() []string {
 	}
 }
 
+// NewListUserGroupCommand creates a new command for listing user groups
 func NewListUserGroupCommand(logger *utils.Logger, userGroupclient groups.UserGroupClient) *cobra.Command {
 	var orgName string
 	cmd := &cobra.Command{
@@ -88,6 +90,7 @@ Use 'kavach user-group members list <group-name>' to see members of a specific g
 	return cmd
 }
 
+// ToRenderable converts user group data to a format suitable for table rendering
 func ToRenderable(data []groups.ListGroupsByOrgRow, orgName string) [][]string {
 	var out [][]string
 

@@ -173,7 +173,16 @@ show a warning but won't fail. Use 'kavach env grant' to add new permissions.`,
 					})
 					return nil
 				}
-
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during environment revoke", map[string]interface{}{
+						"cmd":         "env revoke",
+						"environment": environmentName,
+						"org":         orgName,
+					})
+					return nil
+				}
 				logger.Error("Failed to revoke environment permissions", err, map[string]interface{}{
 					"cmd":         "env revoke",
 					"environment": environmentName,

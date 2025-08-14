@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewAddGroupMemberCommand creates a new command for adding members to user groups
 func NewAddGroupMemberCommand(logger *utils.Logger, userGroupMemberClient groups.UserGroupMemberClient) *cobra.Command {
 
 	var groupName string

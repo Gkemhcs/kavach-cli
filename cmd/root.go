@@ -75,7 +75,7 @@ func Execute(logger *utils.Logger, cfg *config.Config) error {
 	// Initialize clients with logger and config
 	orgClient := orgClient.NewOrgHttpClient(cfg, logger)
 	groupClient := groupClient.NewSecretGroupHttpClient(cfg, logger, orgClient)
-	envClient := envClient.NewEnvironmentHttpClient(logger, cfg, groupClient)
+	envClient := envClient.NewEnvironmentHTTPClient(logger, cfg, groupClient)
 	userGroupClient := groups.NewUsergroupHttpClient(orgClient, logger, cfg)
 	secretClient := secretClient.NewSecretHttpClient(cfg, logger, orgClient, groupClient, envClient)
 	providerClient := providerClient.NewProviderHttpClient(cfg, logger, orgClient, groupClient, envClient)

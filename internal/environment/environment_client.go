@@ -13,17 +13,17 @@ import (
 	"github.com/Gkemhcs/kavach-cli/internal/utils"
 )
 
-// NewEnvironmentHttpClient creates a new EnvironmentHttpClient with the given logger, config, and group getter.
-func NewEnvironmentHttpClient(logger *utils.Logger, cfg *config.Config, groupGetter secretgroup.SecretGroupGetter) *EnvironmentHttpClient {
-	return &EnvironmentHttpClient{
+// NewEnvironmentHTTPClient creates a new EnvironmentHTTPClient with the given logger, config, and group getter.
+func NewEnvironmentHTTPClient(logger *utils.Logger, cfg *config.Config, groupGetter secretgroup.SecretGroupGetter) *EnvironmentHTTPClient {
+	return &EnvironmentHTTPClient{
 		logger:      logger,
 		cfg:         cfg,
 		groupGetter: groupGetter,
 	}
 }
 
-// EnvironmentHttpClient implements EnvironmentClient for making HTTP requests to the backend for environment operations.
-type EnvironmentHttpClient struct {
+// EnvironmentHTTPClient implements EnvironmentClient for making HTTP requests to the backend for environment operations.
+type EnvironmentHTTPClient struct {
 	logger      *utils.Logger
 	cfg         *config.Config
 	groupGetter secretgroup.SecretGroupGetter
@@ -31,7 +31,7 @@ type EnvironmentHttpClient struct {
 
 // CreateEnvironment creates a new environment with the given parameters.
 // Handles error reporting and logging.
-func (c *EnvironmentHttpClient) CreateEnvironment(environmentName, secretGroupName, orgName, description string) error {
+func (c *EnvironmentHTTPClient) CreateEnvironment(environmentName, secretGroupName, orgName, description string) error {
 	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (c *EnvironmentHttpClient) CreateEnvironment(environmentName, secretGroupNa
 }
 
 // ListEnvironment returns a list of environments for the given org and group.
-func (c *EnvironmentHttpClient) ListEnvironment(orgName, groupName string) ([]ListEnvironmentsWithMemberRow, error) {
+func (c *EnvironmentHTTPClient) ListEnvironment(orgName, groupName string) ([]ListEnvironmentsWithMemberRow, error) {
 	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (c *EnvironmentHttpClient) ListEnvironment(orgName, groupName string) ([]Li
 }
 
 // GetEnvironmentbyName returns an environment by name for the given org and group.
-func (c *EnvironmentHttpClient) GetEnvironmentbyName(orgName, groupName, environmentName string) (*EnvironmentResponseData, error) {
+func (c *EnvironmentHTTPClient) GetEnvironmentbyName(orgName, groupName, environmentName string) (*EnvironmentResponseData, error) {
 	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (c *EnvironmentHttpClient) GetEnvironmentbyName(orgName, groupName, environ
 }
 
 // DeleteEnvironment deletes an environment by name for the given org and group.
-func (c *EnvironmentHttpClient) DeleteEnvironment(orgName, groupName, envName string) error {
+func (c *EnvironmentHTTPClient) DeleteEnvironment(orgName, groupName, envName string) error {
 	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (c *EnvironmentHttpClient) DeleteEnvironment(orgName, groupName, envName st
 
 // GrantRoleBinding grants a role to a user or user group on an environment.
 // Handles authentication, environment validation, and provides detailed error messages.
-func (c *EnvironmentHttpClient) GrantRoleBinding(req types.GrantRoleBindingInput) error {
+func (c *EnvironmentHTTPClient) GrantRoleBinding(req types.GrantRoleBindingInput) error {
 	// Validate authentication
 	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
 		return err
@@ -251,7 +251,7 @@ func (c *EnvironmentHttpClient) GrantRoleBinding(req types.GrantRoleBindingInput
 
 // RevokeRoleBinding revokes a role from a user or user group on an environment.
 // Handles authentication, environment validation, and provides detailed error messages.
-func (c *EnvironmentHttpClient) RevokeRoleBinding(req types.RevokeRoleBindingInput) error {
+func (c *EnvironmentHTTPClient) RevokeRoleBinding(req types.RevokeRoleBindingInput) error {
 	// Validate authentication
 	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
 		return err
@@ -330,4 +330,65 @@ func (c *EnvironmentHttpClient) RevokeRoleBinding(req types.RevokeRoleBindingInp
 		"org":         req.OrgName,
 	})
 	return nil
+}
+
+// ListRoleBindings lists all role bindings for an environment with resolved names.
+func (c *EnvironmentHTTPClient) ListRoleBindings(orgName, groupName, envName string) ([]RoleBinding, error) {
+	// Validate authentication
+	if err := auth.RequireAuthMiddleware(c.logger, c.cfg); err != nil {
+		return nil, err
+	}
+
+	// Get environment details
+	env, err := c.GetEnvironmentbyName(orgName, groupName, envName)
+	if err != nil {
+		c.logger.Error("Failed to get environment during role bindings listing", err, map[string]interface{}{
+			"cmd":   "env list-bindings",
+			"org":   orgName,
+			"group": groupName,
+			"env":   envName,
+		})
+		return nil, err
+	}
+
+	// Prepare and execute request
+	payload := client.RequestPayload{
+		Method: "GET",
+		URL:    fmt.Sprintf("%sorganizations/%s/secret-groups/%s/environments/%s/role-bindings", c.cfg.BackendEndpoint, env.OrganizationID, env.SecretGroupID, env.ID),
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	respBody, err := client.DoAuthenticatedRequest[ListRoleBindingsResponse](payload, c.logger, c.cfg)
+	if err != nil {
+		c.logger.Error("Failed to list environment role bindings", err, map[string]interface{}{
+			"cmd":   "env list-bindings",
+			"org":   orgName,
+			"group": groupName,
+			"env":   envName,
+		})
+		return nil, err
+	}
+
+	// Handle response
+	if !respBody.Success {
+		c.logger.Error("Failed to list environment role bindings", fmt.Errorf(respBody.ErrorMsg), map[string]interface{}{
+			"cmd":   "env list-bindings",
+			"org":   orgName,
+			"group": groupName,
+			"env":   envName,
+		})
+		return nil, cliErrors.HandleRoleBindingListError(respBody.ErrorCode, respBody.ErrorMsg)
+	}
+
+	c.logger.Info("Environment role bindings listed successfully", map[string]interface{}{
+		"cmd":   "env list-bindings",
+		"org":   orgName,
+		"group": groupName,
+		"env":   envName,
+		"count": len(respBody.Data.Bindings),
+	})
+
+	return respBody.Data.Bindings, nil
 }

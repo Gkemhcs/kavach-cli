@@ -1,5 +1,6 @@
 package client
 
+// RequestPayload represents the data needed to build an HTTP request
 type RequestPayload struct {
 	Method      string
 	URL         string
@@ -8,18 +9,20 @@ type RequestPayload struct {
 	Body        []byte
 }
 
-type ApiResponse[T any] struct {
+// APIResponse represents the standard API response structure
+type APIResponse[T any] struct {
 	Success   bool   `json:"success"`
 	Data      T      `json:"data,omitempty"`
 	ErrorCode string `json:"error_code,omitempty"`
 	ErrorMsg  string `json:"error_msg,omitempty"`
 }
 
-// Helper types and functions (copied from org_client.go, should be moved here)
+// TokenRefreshRequest represents a request to refresh an access token
 type TokenRefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// TokenRefreshResponse represents the response from a token refresh request
 type TokenRefreshResponse struct {
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`

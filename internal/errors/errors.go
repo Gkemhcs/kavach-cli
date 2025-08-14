@@ -7,8 +7,8 @@ import (
 
 // Predefined error variables for common CLI error scenarios.
 var ErrNotLoggedIn = errors.New("🚫 you are not logged in. Please run 'kavach login'")
-var ErrTokenExpired = errors.New("🔑 token expired or invalid. Please log in again")
-var ErrInvalidToken = errors.New("❌ internal error. Please login again")
+var ErrTokenExpired = errors.New("🔑 please login again, the session is expired, unable to authenticate you")
+var ErrInvalidToken = errors.New("🔑 please login again, the session is expired, unable to authenticate you")
 var ErrOrganizationNotFound = errors.New("❌ sorry, the organization was not found")
 var ErrSecretGroupNotFound = errors.New("❌ sorry, the secret group was not found")
 var ErrEnvironmentNotFound = errors.New("❌ sorry, the environment was not found")
@@ -42,6 +42,13 @@ var ErrEmptySecrets = errors.New("❌ The secrets are empty")
 var ErrTooManySecrets = errors.New("❌ Number of secrets exceeds maximum allowed limit")
 var ErrAccessDenied = errors.New("🚫 You don't have access to perform this action")
 
+// Role binding listing errors
+var ErrNoRoleBindingsFound = errors.New("📋 No role bindings found for this resource")
+var ErrRoleBindingsListFailed = errors.New("❌ Failed to list role bindings. Please try again")
+var ErrInvalidResourceID = errors.New("❌ Invalid resource ID provided")
+var ErrPermissionDeniedForRoleBindings = errors.New("🚫 You don't have permission to view role bindings for this resource")
+var ErrResourceNotFoundForRoleBindings = errors.New("❌ Resource not found when listing role bindings")
+
 // Provider-specific errors
 var ErrProviderCredentialNotFound = errors.New("❌ Provider credential not found")
 var ErrProviderCredentialExists = errors.New("⚠️ Provider credential already exists")
@@ -71,5 +78,57 @@ func IsConnectionError(errorMsg string) bool {
 		strings.Contains(errorMsg, "network is unreachable") {
 		return true
 	}
+	return false
+}
+
+// HandleRoleBindingListError maps backend error codes to user-friendly CLI errors
+func HandleRoleBindingListError(errorCode, errorMsg string) error {
+	switch errorCode {
+	case "no_role_bindings_found":
+		return ErrNoRoleBindingsFound
+	case "role_bindings_list_failed":
+		return ErrRoleBindingsListFailed
+	case "invalid_resource_id":
+		return ErrInvalidResourceID
+	case "permission_denied_role_bindings":
+		return ErrPermissionDeniedForRoleBindings
+	case "resource_not_found_role_bindings":
+		return ErrResourceNotFoundForRoleBindings
+	case "organisation_not_exist":
+		return ErrOrganizationNotFound
+	case "secretgroup_not_exist":
+		return ErrSecretGroupNotFound
+	case "environment_not_exist":
+		return ErrEnvironmentNotFound
+	case "internal_error":
+		return ErrInternalServer
+	default:
+		// If we don't recognize the error code, return a generic error with the message
+		return errors.New(errorMsg)
+	}
+}
+
+// IsAuthenticationError checks if an error message indicates an authentication failure
+func IsAuthenticationError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errMsg := err.Error()
+	authErrorPhrases := []string{
+		"invalid token",
+		"expired token",
+		"unauthorized",
+		"authentication failed",
+		"token expired",
+		"session expired",
+	}
+
+	for _, phrase := range authErrorPhrases {
+		if strings.Contains(strings.ToLower(errMsg), phrase) {
+			return true
+		}
+	}
+
 	return false
 }

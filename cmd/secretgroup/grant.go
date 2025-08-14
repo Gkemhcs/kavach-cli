@@ -163,7 +163,16 @@ update their existing permissions. Use 'kavach group revoke' to remove permissio
 					})
 					return nil
 				}
-
+				// Check if the error message contains authentication-related text
+				if cliErrors.IsAuthenticationError(err) {
+					fmt.Printf("\n🔑 Please login again, the session is expired, unable to authenticate you\n")
+					logger.Warn("Authentication error during secret group grant", map[string]interface{}{
+						"cmd":         "group grant",
+						"secretGroup": secretGroupName,
+						"org":         orgName,
+					})
+					return nil
+				}
 				logger.Error("Failed to grant secret group permissions", err, map[string]interface{}{
 					"cmd":         "group grant",
 					"secretGroup": secretGroupName,
