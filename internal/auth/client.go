@@ -52,6 +52,9 @@ func LoginWithGitHub(logger *utils.Logger, cfg *config.Config) error {
 	fmt.Printf("🔑 To authenticate, visit %s and enter the code: %s\n\n", data.VerificationURI, data.UserCode)
 	logger.Info("Prompted user to authenticate via browser", map[string]interface{}{"cmd": "login", "verification_uri": data.VerificationURI, "user_code": data.UserCode})
 
+	fmt.Println("🔄 Waiting for you to complete authentication in your browser...")
+	fmt.Println("⏱️  You have 2 minutes to complete authentication...")
+
 	// 2. Poll for token (max 2 minutes)
 	var tokenResp struct {
 		Token        string `json:"token"`
@@ -61,7 +64,9 @@ func LoginWithGitHub(logger *utils.Logger, cfg *config.Config) error {
 			Username string `json:"username"`
 		} `json:"user"`
 	}
+
 	maxAttempts := 60 // 2 minutes at 2s interval
+
 	for i := 0; i < maxAttempts; i++ {
 		body := map[string]string{"device_code": data.DeviceCode}
 		b, _ := json.Marshal(body)
@@ -92,10 +97,13 @@ func LoginWithGitHub(logger *utils.Logger, cfg *config.Config) error {
 	}
 
 	if tokenResp.Token == "" {
+		fmt.Println("❌ ⏰ Login timeout!")
+		fmt.Println("❌ Unable to login within 2 minutes. Please try again.")
 		logger.Error("Device authorization timed out after 2 minutes", nil, map[string]interface{}{"cmd": "login"})
 		return fmt.Errorf("device_authorization_timeout")
 	}
 
+	fmt.Println("✅ Authentication completed successfully!")
 	logger.Info("Device authorized, saving token", map[string]interface{}{"cmd": "login", "user": tokenResp.User.Email})
 	return SaveToken(TokenData{
 		AccessToken:  tokenResp.Token,

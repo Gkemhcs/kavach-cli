@@ -56,13 +56,16 @@ refreshed when needed.`,
 					return nil // or exit gracefully
 				}
 				if err.Error() == "device_authorization_timeout" {
+					fmt.Println("❌ ⏰ Login timeout!")
+					fmt.Println("❌ Unable to login within 2 minutes. Please try again.")
 					logger.Warn("Login timed out after 2 minutes. User did not complete authentication in time.", map[string]interface{}{"cmd": "login"})
-					logger.Print("Login timed out after 2 minutes. Please try again and complete authentication in time.")
 					return nil
 				}
 				if err.Error() == "device_authorization_timeout_backend" {
+					fmt.Println("❌ ⏰ Backend timeout!")
+					fmt.Println("❌ Login failed due to a backend timeout during device authorization.")
+					fmt.Println("🔄 Please try logging in again")
 					logger.Warn("Login failed due to a backend timeout during device authorization.", map[string]interface{}{"cmd": "login"})
-					logger.Print("Login failed due to a backend timeout. Please login again, there were issues with the device authorization.")
 					return nil
 				}
 				logger.Error("Login failed with unexpected error", err, map[string]interface{}{"cmd": "login"})

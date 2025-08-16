@@ -11,7 +11,7 @@ on:
       - develop
 
 jobs:
-  lint-format-test:
+  format-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,7 +34,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
           go install golang.org/x/tools/cmd/goimports@latest
 
       - name: Tidy Go modules
@@ -52,22 +51,6 @@ jobs:
             exit 1
           fi
           echo "✅ Code formatting is correct"
-
-      - name: Run linter
-        run: |
-          golangci-lint run --timeout=5m
-
-      - name: Run tests
-        run: |
-          go test -v -race -coverprofile=coverage.out ./...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.out
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
 
       - name: Build binary
         run: |

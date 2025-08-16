@@ -4,9 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-      - 'v*-alpha*'
-      - 'v*-beta*'
-      - 'v*-rc*'
 
 permissions:
   contents: read
@@ -30,16 +27,41 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
+          cache: true
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: latest
+          version: '~> v2'
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ghcr.io
+          REGISTRY_USERNAME: ${{ github.actor }}
+          COSIGN_EXPERIMENTAL: 1
+
+      - name: Build Summary
+        run: |
+          echo "## 🚀 Release Summary"
+          echo ""
+          echo "**Version:** ${{ github.ref_name }}"
+          echo "**Commit:** ${{ github.sha }}"
+          echo ""
+          echo "### 🔗 Links:"
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }})"
+          echo ""
+          echo "### 📦 Binary Downloads:"
+          echo "Check the GitHub release page for:"
+          echo "- Linux AMD64 & ARM64 binaries"
+          echo "- macOS AMD64 & ARM64 binaries" 
+          echo "- Windows AMD64 & ARM64 binaries"
+          echo ""
+          echo "### 🔒 Security Features:"
+          echo "- ✅ Cosign signatures for all artifacts"
+          echo "- ✅ Checksums for verification"
+          echo "- ✅ Multi-platform support" 

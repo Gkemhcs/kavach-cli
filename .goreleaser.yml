@@ -1,14 +1,14 @@
 # GoReleaser configuration for Kavach CLI
 # This file configures how GoReleaser builds and releases the CLI
+version: 2
 
 # Project name and basic info
 project_name: kavach-cli
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
     - go mod tidy
-    # you may remove this if you don't need go generate
-    #- go generate ./...
 
 # Build configuration
 builds:
@@ -20,6 +20,7 @@ builds:
       - darwin
     goarch:
       - amd64
+      - arm64
     binary: kavach
     main: ./main.go
     ldflags:
@@ -28,18 +29,29 @@ builds:
       - -X github.com/Gkemhcs/kavach-cli/internal/version.BuildTime={{.Date}}
       - -X github.com/Gkemhcs/kavach-cli/internal/version.GitCommit={{.Commit}}
       - -X github.com/Gkemhcs/kavach-cli/internal/version.GitBranch={{.Branch}}
+    # macOS-specific optimizations
+    overrides:
+      - goos: darwin
+        ldflags:
+          - -s -w
+          - -X github.com/Gkemhcs/kavach-cli/internal/version.Version={{.Version}}
+          - -X github.com/Gkemhcs/kavach-cli/internal/version.BuildTime={{.Date}}
+          - -X github.com/Gkemhcs/kavach-cli/internal/version.GitCommit={{.Commit}}
+          - -X github.com/Gkemhcs/kavach-cli/internal/version.GitBranch={{.Branch}}
+          - -buildmode=pie
+        env:
+          - CGO_ENABLED=0
+          - GOOS=darwin
 
 # Archive configuration
 archives:
   - format: tar.gz
-    # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-    # use zip for windows archives
     format_overrides:
       - goos: windows
         format: zip
@@ -67,16 +79,13 @@ changelog:
 
 # Release configuration
 release:
-  # GitHub release configuration
   github:
     owner: Gkemhcs
     name: kavach-cli
-  # Set to true if you want to auto-draft new releases
   draft: false
-  # Automatically mark as pre-release based on tag (alpha, beta, rc)
   prerelease: auto
 
-# Sign configuration using Cosign with OIDC keyless signing
+# Sign configuration using Cosign
 signs:
   - cmd: cosign
     signature: "${artifact}.sig"
@@ -86,7 +95,8 @@ signs:
       - '--oidc-provider=github-actions'
       - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
-      - '--tlog-upload=false'
+      - '--tlog-upload=true'
+      - '--rekor-url=https://rekor.sigstore.dev'
       - '${artifact}'
       - --yes
     artifacts: all
